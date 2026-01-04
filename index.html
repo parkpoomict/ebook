@@ -283,50 +283,55 @@
         let isVoiceOn = false;
         
         function initVoice() {
-            // เช็คว่า Browser รองรับหรือไม่ (รองรับทั้ง Chrome และมาตรฐานใหม่)
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) { 
-                alert("Browser ของคุณไม่รองรับคำสั่งเสียง\nแนะนำให้ใช้ Google Chrome หรือ Microsoft Edge ครับ"); 
+                alert("Browser ไม่รองรับระบบเสียง แนะนำให้ใช้ Chrome บน Android หรือ PC ครับ"); 
                 return; 
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = true; // ฟังต่อเนื่อง
-            recognition.interimResults = false; // เอาเฉพาะคำที่พูดจบแล้ว
-            recognition.lang = 'en-US'; // ใช้ภาษาอังกฤษ (แม่นยำกว่าสำหรับคำสั่งสั้นๆ)
+            recognition.continuous = true; 
+            recognition.interimResults = false; 
+            
+            // --- จุดสำคัญ: เปลี่ยนเป็นภาษาไทย ---
+            recognition.lang = 'th-TH'; 
 
             recognition.onstart = () => {
-                console.log("Voice Recognition Started");
+                console.log("เริ่มฟังเสียงแล้ว (Mic On)");
+                showStatus("รอคำสั่งเสียง...", "fa-ear-listen");
             };
 
             recognition.onend = () => {
-                console.log("Voice Recognition Ended");
-                // ถ้าเปิดโหมดเสียงอยู่แต่ระบบตัดไปเอง ให้ต่อใหม่ (Auto Restart)
-                if(isVoiceOn) recognition.start();
+                console.log("จบการฟัง (Mic Off) - กำลังต่อใหม่...");
+                if(isVoiceOn) recognition.start(); // Auto Restart
             };
 
             recognition.onresult = (event) => {
                 const command = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-                console.log(`Voice Command Received: "${command}"`); // ดูใน Console (F12) ได้
+                console.log(`ได้ยินว่า: "${command}"`); 
                 
-                // ตัดคำเผื่อมี Noise
-                if(command.includes('next') || command.includes('go') || command.includes('ถัดไป')) nextPage();
-                else if(command.includes('back') || command.includes('previous') || command.includes('ย้อน')) prevPage();
-                else if(command.includes('zoom') || command.includes('sum')) { // บางทีฟัง Zoom เป็น Sum
+                // --- ชุดคำสั่งภาษาไทย ---
+                if(command.includes('ถัดไป') || command.includes('หน้าต่อไป') || command.includes('next')) {
+                    nextPage();
+                }
+                else if(command.includes('ย้อน') || command.includes('กลับ') || command.includes('back')) {
+                    prevPage();
+                }
+                else if(command.includes('ขยาย') || command.includes('ซูม') || command.includes('ใหญ่')) {
                     if(!isZoomed) toggleZoom(); 
                 }
-                else if(command.includes('reset') || command.includes('close') || command.includes('ออก')) { 
+                else if(command.includes('ออก') || command.includes('ปกติ') || command.includes('รีเซ็ต')) { 
                     if(isZoomed) toggleZoom(); 
                 }
                 
-                showStatus(`Voice: "${command}"`, "fa-microphone");
+                showStatus(`คำสั่ง: "${command}"`, "fa-microphone");
             };
 
             recognition.onerror = (event) => {
-                console.error("Voice Error:", event.error);
+                console.error("เกิดข้อผิดพลาด:", event.error);
                 if(event.error === 'not-allowed') {
-                    alert("กรุณากดอนุญาตให้ใช้ไมโครโฟนที่แถบ Address Bar");
+                    alert("กรุณากดอนุญาตไมโครโฟนที่แถบ Address Bar ด้านบน");
                     isVoiceOn = false;
                     document.getElementById('voice-btn').classList.remove('btn-active');
                 }
